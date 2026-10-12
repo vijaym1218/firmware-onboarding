@@ -1,30 +1,45 @@
 #include "LEDController.h"
+#include <math.h>
 
-void LEDController::begin()
+LEDController::LEDController()
 {
-    pinMode(BMEConstants::LED_PIN, OUTPUT);
-    digitalWrite(BMEConstants::LED_PIN, LOW);
-    lastToggleMs_ = millis();
 }
 
-void LEDController::setTemperature(float temperatureC)
+void LEDController::init()
 {
-    const float clamped = constrain(temperatureC,
-                                    BMEConstants::MIN_TEMPERATURE_C,
-                                    BMEConstants::MAX_TEMPERATURE_C);
-    const float fraction = (clamped - BMEConstants::MIN_TEMPERATURE_C) /
-                           (BMEConstants::MAX_TEMPERATURE_C - BMEConstants::MIN_TEMPERATURE_C);
-    blinkIntervalMs_ = BMEConstants::MAX_BLINK_INTERVAL_MS -
-                       static_cast<unsigned long>(fraction *
-                           (BMEConstants::MAX_BLINK_INTERVAL_MS - BMEConstants::MIN_BLINK_INTERVAL_MS));
+    pinMode(BMEConstants::LED_Pin, OUTPUT);
+    digitalWrite(BMEConstants::LED_Pin, LOW);
+    lastToggle = millis();
 }
 
-void LEDController::update(unsigned long now)
+void LEDController::setFrequency(float temperatureC)
 {
-    if (now - lastToggleMs_ >= blinkIntervalMs_)
-    {
-        lastToggleMs_ = now;
-        ledOn_ = !ledOn_;
-        digitalWrite(BMEConstants::LED_PIN, ledOn_ ? HIGH : LOW);
+    if (!isfinite(temperatureC)) {
+        return;
     }
+
+    const float clampedTemperature = temperatureC < 0.0f
+        ? 0.0f
+        : (temperatureC > 40.0f ? 40.0f : temperatureC);
+    const float temperatureFraction = clampedTemperature / 40.0f;
+    const unsigned long intervalRange = BMEConstants::MAX_BLINK_INTERVAL_MS -
+                                        BMEConstants::MIN_BLINK_INTERVAL_MS;
+    togglePeriod = BMEConstants::MAX_BLINK_INTERVAL_MS -
+                   static_cast<unsigned long>(temperatureFraction * intervalRange);
+}
+
+void LEDController::update()
+{
+    unsigned long now = millis();
+    if (now - lastToggle >= togglePeriod) {
+        lastToggle = now;
+        if (ledOn) {
+            ledOn = false;
+            digitalWrite(BMEConstants::LED_Pin, LOW);
+        } else {
+            ledOn = true;
+            digitalWrite(BMEConstants::LED_Pin, HIGH);
+        }
+    }
+
 }

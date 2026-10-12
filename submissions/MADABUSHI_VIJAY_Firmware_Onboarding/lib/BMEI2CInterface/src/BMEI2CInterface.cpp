@@ -1,20 +1,21 @@
 #include "BMEI2CInterface.h"
-#include <Wire.h>
 
-bool BMEI2CInterface::begin()
+BMEI2CInterface::BMEI2CInterface() : bme()
 {
-    Wire.begin();
-    ready_ = sensor_.begin(BMEConstants::I2C_ADDRESS, &Wire);
-    return ready_;
 }
 
-bool BMEI2CInterface::readTemperature(float &temperatureC)
+bool BMEI2CInterface::init()
 {
-    if (!ready_)
-    {
-        return false;
-    }
+    return bme.begin(BMEConstants::I2C_ADDRESS) ||
+           bme.begin(BMEConstants::I2C_ALTERNATE_ADDRESS);
+}
 
-    temperatureC = sensor_.readTemperature();
-    return !isnan(temperatureC);
+void BMEI2CInterface::update()
+{
+    temperatureC = bme.readTemperature();
+}
+
+float BMEI2CInterface::getTemperature()
+{
+    return temperatureC;
 }

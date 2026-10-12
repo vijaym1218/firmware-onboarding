@@ -1,27 +1,20 @@
 #include "BMESPIInterface.h"
-#include <SPI.h>
 
-BMESPIInterface::BMESPIInterface()
-    : sensor_(BMEConstants::SPI_CHIP_SELECT_PIN, &SPI)
+BMESPIInterface::BMESPIInterface() : bme(BMEConstants::CS_Pin)
 {
 }
 
-bool BMESPIInterface::begin()
+bool BMESPIInterface::init()
 {
-    pinMode(BMEConstants::SPI_CHIP_SELECT_PIN, OUTPUT);
-    digitalWrite(BMEConstants::SPI_CHIP_SELECT_PIN, HIGH);
-    SPI.begin();
-    ready_ = sensor_.begin();
-    return ready_;
+    return bme.begin();
 }
 
-bool BMESPIInterface::readTemperature(float &temperatureC)
+void BMESPIInterface::update()
 {
-    if (!ready_)
-    {
-        return false;
-    }
+    temperatureC = bme.readTemperature();
+}
 
-    temperatureC = sensor_.readTemperature();
-    return !isnan(temperatureC);
+float BMESPIInterface::getTemperature()
+{
+    return temperatureC;
 }
